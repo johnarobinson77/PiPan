@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_start_button">start</string>
+    <string name="home_test_button">test</string>
+    <string name="option_end_sequence">End Sequence</string>
+    <string name="home_copy_log">Copy log</string>
+    <string name="home_hotspot">Hotspot</string>
+    <string name="home_shutdown">Shutdown</string>
+    <string name="radio_button_host_1">Host 1</string>
+</resources>
