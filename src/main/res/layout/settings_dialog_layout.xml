@@ -58,7 +58,7 @@
             android:text="@string/unit_password" />
         <EditText
             android:id="@+id/password"
-            android:inputType="text"
+            android:inputType="textPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif"

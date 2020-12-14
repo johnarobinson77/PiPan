@@ -57,12 +57,10 @@ public class PanCom {
     public static class PanSequenceItem {
         public final String cmdChar;
         public final String description;
-        public final String details;
 
-        public PanSequenceItem(String cmdChar, String description, String details) {
+        public PanSequenceItem(String cmdChar, String description) {
             this.cmdChar = cmdChar;
             this.description = description;
-            this.details = details;
         }
 
         @NotNull
@@ -141,7 +139,7 @@ public class PanCom {
                         String cmdChar = tmp[0].substring(tmp[0].length()-1);
                         if (tmp.length == 2) {
                             PanCom.PanSequenceItem psi =
-                                    new PanCom.PanSequenceItem(cmdChar, tmp[1], "");
+                                    new PanCom.PanSequenceItem(cmdChar, tmp[1]);
                             PanCom.addItem(psi);
                         }
                     }

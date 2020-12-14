@@ -53,7 +53,6 @@ public class OptionFragment extends Fragment {
     }
 
     // TODO: Customize parameter initialization
-    @SuppressWarnings("unused")
     public static OptionFragment newInstance(int columnCount) {
         OptionFragment fragment = new OptionFragment();
         Bundle args = new Bundle();
@@ -79,7 +78,7 @@ public class OptionFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_option_list, container, false);
 
         // Set the adapter
-        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.option_list);;
+        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.option_list);
         Context context = recyclerView.getContext();
         if (mColumnCount <= 1) {
             recyclerView.setLayoutManager(new LinearLayoutManager(context));
@@ -88,12 +87,7 @@ public class OptionFragment extends Fragment {
         }
         recyclerView.setAdapter(new MyOptionRecyclerViewAdapter(PanCom.ITEMS));
         endSeqButton = (Button) view.findViewById(R.id.end_sequence_button);
-        endSeqButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Sshcom.sendUnsolicitedCommand("e");
-            }
-        });
+        endSeqButton.setOnClickListener(v -> Sshcom.sendUnsolicitedCommand("e"));
         endSeqButton.setEnabled(Globals.isRunning());
 
         return view;

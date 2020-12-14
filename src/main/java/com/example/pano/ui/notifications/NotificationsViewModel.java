@@ -21,7 +21,7 @@ import androidx.lifecycle.ViewModel;
 
 public class NotificationsViewModel extends ViewModel {
 
-    private static MutableLiveData<String> mText = new MutableLiveData<>();
+    private static final MutableLiveData<String> mText = new MutableLiveData<>();
 
     private static String savedLog = new String();
     private static Integer lineCnt = 0;
@@ -33,31 +33,10 @@ public class NotificationsViewModel extends ViewModel {
         //if (lineCnt == 0) testAsync();
      }
 
-    public void testAsync(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                // Run whatever background code you want here.
-                for (int i = 0; i < 500; i++) {
-                    String s = "Notification Fragment" + lineCnt + "\n";
-                    append(s);
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        ).start();
-    }
-
-    public static String append(String logString){
+    public static void append(String logString){
         savedLog += logString;
         lineCnt++;
         mText.postValue(logString);
-        return savedLog;
     }
 
     public LiveData<String> getText() {

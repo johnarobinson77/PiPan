@@ -20,38 +20,26 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.pano.R;
 
 public class NotificationsFragment extends Fragment {
 
-    private NotificationsViewModel notificationsViewModel;
-
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        notificationsViewModel =
-                new ViewModelProvider(this).get(NotificationsViewModel.class);
+        NotificationsViewModel notificationsViewModel = new ViewModelProvider(this).get(NotificationsViewModel.class);
         View root = inflater.inflate(R.layout.fragment_notifications, container, false);
+        final ScrollView scrollView = root.findViewById(R.id.notification_scroller);
+        scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
         final TextView textView = root.findViewById(R.id.text_notifications);
         textView.setMovementMethod(new ScrollingMovementMethod());
-        final ScrollView scrollView = root.findViewById(R.id.notification_scroller);
-        scrollView.fullScroll(View.FOCUS_DOWN);
-        notificationsViewModel.getText().observe(getViewLifecycleOwner(), new Observer<String>() {
-            @Override
-            public void onChanged(@Nullable String s) {
-                textView.append(s);
-                scrollView.fullScroll(View.FOCUS_DOWN);
-            }
-        });
+        notificationsViewModel.getText().observe(getViewLifecycleOwner(), s -> textView.append(s));
         return root;
     }
 }

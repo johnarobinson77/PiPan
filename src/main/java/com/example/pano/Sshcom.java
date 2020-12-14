@@ -50,7 +50,7 @@ public class Sshcom {
     private final SharedPreferences settings;
 
     // shared variable for Jsch SSH interface
-    JSch jsch = new JSch();
+    final JSch jsch = new JSch();
     private Session session = null;
     private ChannelShell channel = null;
     private InputStream in = null;
@@ -84,7 +84,7 @@ public class Sshcom {
     }
 
     // make sure to kill the HandlerThread.
-    public void finalize(){ ;
+    public void finalize(){
         getRunCommand().quit();
     }
 
@@ -353,11 +353,11 @@ public class Sshcom {
     }
 
     public static class RunCommandMsg {
-        Integer tag;
-        String command;
-        String waitFor;
-        Integer timeOut;
-        CommandResultCallback callback;
+        final Integer tag;
+        final String command;
+        final String waitFor;
+        final Integer timeOut;
+        final CommandResultCallback callback;
         RunCommandMsg(Integer tag, String command, String waitFor, Integer timeOut,
                       CommandResultCallback callback){
             this.tag = tag;

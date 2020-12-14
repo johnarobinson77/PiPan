@@ -71,9 +71,7 @@ public class HomeFragment extends Fragment {
             Globals.sshcom.test(Globals.getHostSelect());
         });
         ctrlCButton = root.findViewById(R.id.ctrl_c_button);
-        ctrlCButton.setOnClickListener(v -> {
-            ctrlC();
-        });
+        ctrlCButton.setOnClickListener(v -> ctrlC());
 
         connectButton = root.findViewById(R.id.connect_button);
         connectButton.setOnClickListener(v -> connectAndStart());
@@ -201,8 +199,8 @@ public class HomeFragment extends Fragment {
 
                     System.out.println("activeNetwork: " + activeNetwork);
                     System.out.println("ipString: " + ipString);
-                    NotificationsViewModel.append("activeNetwork: " + activeNetwork);
-                    NotificationsViewModel.append("ipString: " + ipString);
+                    NotificationsViewModel.append("activeNetwork: " + activeNetwork + "\n");
+                    NotificationsViewModel.append("ipString: " + ipString + "\n");
 
                     String prefix = iNet != null ? iNet.substring(0, iNet.lastIndexOf('.')) : null;
                     System.out.println("prefix: " + prefix);
@@ -212,7 +210,7 @@ public class HomeFragment extends Fragment {
                         String testIp = prefix + i;
 
                         InetAddress address = InetAddress.getByName(testIp);
-                        boolean reachable = address.isReachable(300);
+                        boolean reachable = address.isReachable(100);
                         String hostName = address.getCanonicalHostName();
 
                         if (reachable) {
@@ -269,7 +267,7 @@ public class HomeFragment extends Fragment {
 
     // This callback handles the returns from host commands sent to Sshcom for several of the
     // buttons.  Includes connect (tag 0) disconnect (tag 3) and shutdown (tag 5)
-    Sshcom.CommandResultCallback callback = new Sshcom.CommandResultCallback() {
+    final Sshcom.CommandResultCallback callback = new Sshcom.CommandResultCallback() {
         @Override
         public void onComplete(int tag, Sshcom.ReturnStatus returnStatus, String result) {
             if (result != null) NotificationsViewModel.append(result);

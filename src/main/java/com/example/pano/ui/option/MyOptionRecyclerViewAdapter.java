@@ -28,6 +28,8 @@ import com.example.pano.PanInterface.PanCom;
 import com.example.pano.R;
 import com.example.pano.PanInterface.PanCom.PanSequenceItem;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.List;
 
 /**
@@ -41,6 +43,7 @@ public class MyOptionRecyclerViewAdapter extends RecyclerView.Adapter<MyOptionRe
         mValues = items;
     }
 
+    @NotNull
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
@@ -95,7 +98,7 @@ public class MyOptionRecyclerViewAdapter extends RecyclerView.Adapter<MyOptionRe
         public final TextView mIdView;
         public final TextView mContentView;
         public PanSequenceItem mItem;
-        public IMyViewHolderClicks mListener;
+        public final IMyViewHolderClicks mListener;
 
         public ViewHolder(View itemLayoutView, IMyViewHolderClicks listener) {
             super(itemLayoutView);
@@ -107,6 +110,7 @@ public class MyOptionRecyclerViewAdapter extends RecyclerView.Adapter<MyOptionRe
             itemLayoutView.setOnClickListener(this);
         }
 
+        @NotNull
         @Override
         public String toString() {
             return super.toString() + " '" + mContentView.getText() + "'";
@@ -124,9 +128,9 @@ public class MyOptionRecyclerViewAdapter extends RecyclerView.Adapter<MyOptionRe
             }
         }
 
-        public static interface IMyViewHolderClicks {
-            public void onViewClick(View caller, int position);
-            public void onImageViewClick(ImageView callerImage, int position);
+        public interface IMyViewHolderClicks {
+            void onViewClick(View caller, int position);
+            void onImageViewClick(ImageView callerImage, int position);
         }
     }
 }
