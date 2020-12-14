@@ -17,41 +17,41 @@ These are the main interfaces to the Sshcom class.
 ### Login Information
 
 The following constructor:
-'''
+```java
 public Sshcom(Activity activity, Handler sshHandler)
-'''
+```
 restores the logon information that was stored previously if it exists. The constructor requires the Activity should be the main activity of the app. The Handler will be discussed later.
 
 Sshcom internally stores the following login info for several hosts:
-'''
+```java
 private String[] baseIP;
 private String[] username;
 private String[] password;
 private String[] directory;
 private String[] cliPrompt;
-'''
+```
 There are the expected public setters and getters for each of those fields and it requires the select to indicate which host login info to update. The following method will save all of the above strings in the saved preferences area of the app.
-'''
+```java
 public void saveSettings(int select)
-'''
+```
 They will be read back in by the constructor next time the app is started.
 
 In addition, there is the following login info:
-'''
+```java
 private String IP;
-'''
+```
 IP is the string that Sshcom actually uses for the host and is generally set to the same value as baseIP. However, sometimes it is necessary to patch the host IP address based on the current settings. If necessary it should be updated before a connect command is issued.
 
 Before any ssh communications can be sent, an asynchronous thread must be started using the method:
-'''
+```java
 public Handler startRunCommandThread()
-'''
+```
 Though it returns a Handler, it is not necessary to store it.
 
 ### Sending Commands to Sshcom
 
 The interface from the UI to the async thread handing SSH communications is
-'''
+```java
 public void sendRunCommandMsg(
 int type, // type of command,
 int tag, // command tag
@@ -61,13 +61,13 @@ Integer timeOut, // number of seconds to wait for text.
 CommandResultCallback callback //pointer to a class containing a
                               //method to handle return text
 )
-'''
+```
 - type in the above parameter list can be any of the following:
-'''
+```java
 Sshcom.RunCommandType._OPEN\_CHANNEL_ = 0; _// Open the channel_
 Sshcom.RunCommandType._RUN\_COMMAND_ = 1; _// Send a command and wait for response_
 Sshcom.RunCommandType._CLOSE\_CHANNEL_ = 2; _// close the channel_
-'''
+```
 - tag is an int that gets passed to the callback function handling the response from the server.
 - command is the String containing the command to be sent. Sshcom adds a \&lt;return\&gt; at the end of the string.
 - waitFor is a string that is matched against the text returned from the server. It is meant to indicate to Sshcom that it should not expect any more text from the server after seeing that string. Its typical value would be the command line prompt for the server CLI. It can be null indicating to not search for text, just wait for the timeout.
@@ -83,17 +83,17 @@ Finally, the channel can be closed using the CHANNEL\_CLOSE type. Even if you se
 ### CommandResultCallback
 
 To receive the text from the server after a command is sent a callback must be defined by overriding the onComplete method in the interface shown below
-'''
+```java
 public interface CommandResultCallback {
 public void onComplete(int tag, // userspecific
 ReturnStatus returnStatus, // return status
 String result // result
 );
 }
-'''
+```
 - tag is an int that is passed from the command issued available to the user for any use, such as disambiguating which sendRunCommand caused this particular return.
 - returnStatus is one of the following:
-'''
+```java
 Sshcom.ReturnStatus_.NULL_, _// no info_
 Sshcom.ReturnStatus_.ERROR_, _// Error_
 Sshcom.ReturnStatus_.CHANNEL\_OPENED_, _// Channel was opened_
@@ -101,7 +101,7 @@ Sshcom.ReturnStatus_.CHANNEL\_CLOSED_, _// Channel was closed_
 Sshcom.ReturnStatus_.STILL\_RUNNING_, _// Partial return expecting more_
 Sshcom.ReturnStatus_.WAITFOR\_FOUND_, _// Final return waitFor text was found_
 Sshcom.ReturnStatus_.TIMEOUT_ _// Final return command timed out_
-'''
+```
 - result is a String containing the actual text.
 
 The meanings of ReturnStatus values are as follows:
@@ -124,15 +124,15 @@ public static String getCmdOutputBuffer()
 ### Unsolicited Commands
 
 Sometimes it is necessary to send a command to interrupt a process that was started by sendRunCommandMsg() but the waitFor and timeout conditions have not been met yet. This can be implemented with the
-'''
+```java
 Sshcom._sendUnsolicitedCommand(String cmd)_
-'''
+```
 function. The text in cmd is sent to the server immediately even if there is a pending callback. The typical use for this is to send a ^C or some other interrupt character when some command is taking too long. It does not however terminate the process of Sshcom waiting for text from the server so expect more callbacks.
 
 To break out of the loop that is waiting for text execute call the
-'''
+```java
 public static void endWaitForResponse()
-'''
+```
 command.
 
 ## Sshcom test()
