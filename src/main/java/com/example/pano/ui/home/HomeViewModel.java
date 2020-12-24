@@ -21,11 +21,15 @@ import androidx.lifecycle.ViewModel;
 
 public class HomeViewModel extends ViewModel {
 
-    private final MutableLiveData<String> mText;
+    private static MutableLiveData<String> mText = null;
 
     public HomeViewModel() {
         mText = new MutableLiveData<>();
         mText.setValue("This is home fragment");
+    }
+
+    public static void  updateBanner(String update) {
+        if (mText!= null) mText.setValue(update);
     }
 
     public LiveData<String> getText() {

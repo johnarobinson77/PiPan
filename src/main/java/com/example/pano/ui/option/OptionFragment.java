@@ -27,11 +27,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.example.pano.Globals;
 import com.example.pano.R;
 import com.example.pano.PanInterface.PanCom;
-import com.example.pano.Sshcom;
+import com.example.pano.Sshcom.Sshcom;
 
 /**
  * A fragment representing a list of Items.
@@ -43,6 +44,13 @@ public class OptionFragment extends Fragment {
     // TODO: Customize parameters
     private int mColumnCount = 1;
     private static OptionFragment optionFragment;
+    private static String optionLoop = "";
+
+    @Override
+    protected void finalize() throws Throwable {
+        optionFragment = null;
+        super.finalize();
+    }
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -62,6 +70,7 @@ public class OptionFragment extends Fragment {
     }
 
     Button endSeqButton;
+    TextView optionInfo;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -88,14 +97,22 @@ public class OptionFragment extends Fragment {
         recyclerView.setAdapter(new MyOptionRecyclerViewAdapter(PanCom.ITEMS));
         endSeqButton = (Button) view.findViewById(R.id.end_sequence_button);
         endSeqButton.setOnClickListener(v -> Sshcom.sendUnsolicitedCommand("e"));
-        endSeqButton.setEnabled(Globals.isRunning());
-
+        endSeqButton.setEnabled(Globals.isSeqRunning());
+        optionInfo = view.findViewById(R.id.option_loop_count);
+        optionInfo.setText(optionLoop);
         return view;
     }
 
+    public static void setOptionLoop(String newOptionLoop) {
+        optionLoop = newOptionLoop;
+        if (optionFragment != null && optionFragment.optionInfo != null)
+            optionFragment.optionInfo.setText(optionLoop);
+    }
+
     public static void setStatusRunning(boolean en) {
-        if (en) Globals.setStatusRunning();
-        else Globals.setStatusNotRunning();
-        optionFragment.endSeqButton.setEnabled(Globals.isRunning());
+        if (en) Globals.setStatusSeqRunning();
+        else Globals.setStatusSeqNotRunning();
+        if (optionFragment != null && optionFragment.endSeqButton != null)
+            optionFragment.endSeqButton.setEnabled(Globals.isSeqRunning());
     }
 }

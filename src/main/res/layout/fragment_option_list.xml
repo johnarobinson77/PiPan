@@ -10,7 +10,7 @@
         android:name="com.example.pano.ui.option.OptionFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/end_sequence_button"
+        app:layout_constraintBottom_toTopOf="@+id/option_info"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -21,15 +21,29 @@
         tools:context=".ui.option.OptionFragment"
         tools:listitem="@layout/fragment_option" />
 
-    <Button
-        android:id="@+id/end_sequence_button"
-        android:layout_width="wrap_content"
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:id="@+id/option_info"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/option_end_sequence"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         android:layout_marginBottom = "56dp"
-        />
+        >
 
+        <Button
+            android:id="@+id/end_sequence_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="@string/option_end_sequence" />
+        <TextView
+            android:id="@+id/option_loop_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_marginStart="15dp"
+            android:textSize="8pt"
+            />
+    </androidx.appcompat.widget.LinearLayoutCompat>
 </androidx.constraintlayout.widget.ConstraintLayout>

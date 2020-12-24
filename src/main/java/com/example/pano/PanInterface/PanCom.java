@@ -23,7 +23,8 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.pano.Globals;
-import com.example.pano.Sshcom;
+import com.example.pano.R;
+import com.example.pano.Sshcom.Sshcom;
 import com.example.pano.ui.notifications.NotificationsViewModel;
 import com.example.pano.ui.option.MyOptionRecyclerViewAdapter;
 import com.example.pano.ui.option.OptionFragment;
@@ -45,11 +46,10 @@ import java.util.Map;
  */
 public class PanCom {
 
-    private static Context context = null;
+    private static Context context() {return Globals.context;}
 
-    public void finalize(){
-        context = null;
-    }
+    private static String cmdChar = "";
+
 
     /**
      * A PanInterface item representing a piece of content.
@@ -116,6 +116,7 @@ public class PanCom {
     public static void quitPan() {
         // Stop the pan.py
         StartStopCallback.onComplete(3, Sshcom.ReturnStatus.NULL, "");
+        OptionFragment.setOptionLoop("");
     }
 
     // This runs the sequence for driving the
@@ -144,6 +145,9 @@ public class PanCom {
                         }
                     }
                     if (listViewAdapter != null) listViewAdapter.updateList();
+                    Globals.setStatusPanRunning();
+                    Globals.homeFragment.updateButtons();
+
                     break;
 
                 // case 3 and 4 handle quiting the pan.py program
@@ -160,6 +164,8 @@ public class PanCom {
                         ITEM_MAP.clear();
                         ITEMS.clear();
                         if (listViewAdapter != null) listViewAdapter.updateList();
+                        Globals.setStatusPanNotRunning();
+                        Globals.homeFragment.updateButtons();
                     }
                     break;
                 default:
@@ -183,7 +189,7 @@ public class PanCom {
 
 
     private static void checklistSignOff(String checklistItem) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context());
         builder.setMessage(checklistItem);
         builder.setTitle("Checklist");
         builder.setPositiveButton("OK", (dialog, which) -> Globals.sshcom.sendRunCommandMsg( Sshcom.RunCommandType.RUN_COMMAND, 1,
@@ -191,42 +197,104 @@ public class PanCom {
         builder.show();
     }
 
-    private static final Sshcom.CommandResultCallback checklistCallback = (tag, returnStatus, result) -> {
-        if (result != null) {
-            NotificationsViewModel.append(result);
-        }
-        if (returnStatus != Sshcom.ReturnStatus.TIMEOUT) return; // not ready yet
-        String outBuf = Sshcom.getCmdOutputBuffer();
-        if (outBuf != null) {
-            if (outBuf.contains(panPrompt)) return; // its done so exit
-            int cp = outBuf.indexOf('\n'); // remove the CR and the beginning of the string
-            outBuf = outBuf.substring(cp+1);
-            checklistSignOff(outBuf); // put up the alert dialog.
+    private static final Sshcom.CommandResultCallback checklistCallback = new Sshcom.CommandResultCallback() {
+        @Override
+        public void onComplete(int tag, Sshcom.ReturnStatus returnStatus, String result) {
+            if (result != null) {
+                NotificationsViewModel.append(result);
+            }
+            if (returnStatus != Sshcom.ReturnStatus.TIMEOUT) return; // not ready yet
+            String outBuf = Sshcom.getCmdOutputBuffer();
+            if (outBuf != null) {
+                if (outBuf.contains(panPrompt)) return; // its done so exit
+                int cp = outBuf.indexOf('\n'); // remove the CR and the beginning of the string
+                outBuf = outBuf.substring(cp + 1);
+                checklistSignOff(outBuf); // put up the alert dialog.
+            }
         }
     };
 
-    public static void startChecklist(View view) {
-        context = view.getContext();
+    public static void startChecklist() {
         Globals.sshcom.sendRunCommandMsg( Sshcom.RunCommandType.RUN_COMMAND, 1,
                 "c", null, 1, checklistCallback);
+        OptionFragment.setOptionLoop("");
+    }
+
+    // The next 3 methods handle the special command where the controller advances to a certain
+    // position and waits for imput to take the picture and continue.  This is for stop action
+    // like videos.  waitSequence() starts by sending the appropriate sendRunCommandMsg() and wait
+    // for the prompt to advance the sequence.  When the callback is called with the correct waitFor,
+    // it calls waitSequenceAdvance() this method puts up a dialog allowing the user to advance
+    // with the OK button.  If the callback returns with a timeout instead of a waitFor, it
+    // assumes the sequence is complete and does not call the
+    private static void waitSequenceAdvance(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context());
+        builder.setMessage(message);
+        builder.setTitle("Wait Sequence");
+        builder.setPositiveButton("OK", (dialog, which) -> Globals.sshcom.sendRunCommandMsg( Sshcom.RunCommandType.RUN_COMMAND, 1,
+                "", "continue", 30, waitSequenceCallback));
+        builder.show();
+    }
+
+
+    private static final Sshcom.CommandResultCallback waitSequenceCallback = new Sshcom.CommandResultCallback() {
+        @Override
+        public void onComplete(int tag, Sshcom.ReturnStatus returnStatus, String result) {
+            if (result != null) {
+                NotificationsViewModel.append(result);
+            }
+            if (returnStatus == Sshcom.ReturnStatus.WAITFOR_FOUND)
+                waitSequenceAdvance("Press OK to continue"); // put up the alert dialog to advance
+            // if not waitFor found, assume there is more coming or the sequence has ended.
+        }
+    };
+
+    public static void waitSequence(String cmd) {
+        Globals.sshcom.sendRunCommandMsg( Sshcom.RunCommandType.RUN_COMMAND, 1,
+                cmd, "continue", 30, waitSequenceCallback);
+        OptionFragment.setOptionLoop("");
     }
 
     // handling all other commands is handled with the next 2 methods.  Since the command can run
     // for over 60 minutes, the time out is set to cover that.
 
-    private static final Sshcom.CommandResultCallback sequenceCallback = (tag, returnStatus, result) -> {
-        if (result != null) {
-            NotificationsViewModel.append(result);
-        }
-        if (returnStatus != Sshcom.ReturnStatus.STILL_RUNNING){
-            OptionFragment.setStatusRunning(false);
+    private static final Sshcom.CommandResultCallback sequenceCallback = new Sshcom.CommandResultCallback() {
+        @Override
+        public void onComplete(int tag, Sshcom.ReturnStatus returnStatus, String result) {
+            if (result != null) {
+                NotificationsViewModel.append(result);
+                int k;
+                if (-1 != (k = result.indexOf("Loop"))) {
+                    String num = result.substring(k + 4, result.indexOf(" ", k + 5));
+                    String tmp = context().getString(R.string.option_loop_text) + num;
+                    tmp = tmp.replace("_", cmdChar);
+                    OptionFragment.setOptionLoop(tmp);
+                } else if (result.contains("Done")) {
+                    OptionFragment.setOptionLoop(context().getString(R.string.option_loop_done));
+                }
+            }
+            if (returnStatus != Sshcom.ReturnStatus.STILL_RUNNING) {
+                OptionFragment.setStatusRunning(false);
+            }
+            if (returnStatus == Sshcom.ReturnStatus.TIMEOUT) {
+                String err = "Sshcom Error: Reading reulst timed out before 'Done' indication";
+                NotificationsViewModel.append(err + "\n");
+                System.out.println(err);
+            }
         }
     };
 
-    public static void runSequence(String cmdChar) {
+    public static void runSequence(View view, String cmdChar) {
         Globals.sshcom.sendRunCommandMsg( Sshcom.RunCommandType.RUN_COMMAND, 1,
-                cmdChar, panPrompt, 2000, sequenceCallback);
+                cmdChar, panPrompt, 2*60*60, sequenceCallback); // 2 hour timeout
         OptionFragment.setStatusRunning(true);
+        if (cmdChar.matches("[0123456789]")) {
+            String tmp = view.getContext().getString(R.string.option_loop_text) + " 0";
+            tmp = tmp.replace("_", cmdChar);
+            PanCom.cmdChar = cmdChar;
+            OptionFragment.setOptionLoop(tmp);
+        } else
+            OptionFragment.setOptionLoop("");
     }
 
     // The following variables and 2 methods are used for copying the log file created in the last
@@ -242,69 +310,71 @@ public class PanCom {
     private static FileOutputStream fos = null;
 
     public static void copyLog(Activity activity, ParcelFileDescriptor pfd) {
-        PanCom.context = activity;
         PanCom.pfd = pfd;
          Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.RUN_COMMAND, 1,
                 "cat log.log", Globals.sshcom.getCliPrompt(Globals.sshcom.getCurrentHost()),
                  5, copyLogCallback);
     }
 
-    private static final Sshcom.CommandResultCallback copyLogCallback = (step, returnStatus, result) -> {
-        if (pfd == null) {  // pdf == null indicates some error happened in the past so stop
-            NotificationsViewModel.append(result);
-            return;
-        }
-        //if (result != null) NotificationsViewModel.append(result);
-        if (result.contains("No such file or directory")) {
-            NotificationsViewModel.append(result);
-            Toast.makeText(context, "Copy log file ERROR, couldn't open source file",
-                    Toast.LENGTH_LONG).show();
-            try {
-                fos.close();
-                pfd.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+    private static final Sshcom.CommandResultCallback copyLogCallback = new Sshcom.CommandResultCallback() {
+        @Override
+        public void onComplete(int tag, Sshcom.ReturnStatus returnStatus, String result) {
+                if (pfd == null) {  // pdf == null indicates some error happened in the past so stop
+                    NotificationsViewModel.append(result);
+                    return;
+                }
+                //if (result != null) NotificationsViewModel.append(result);
+                if (result.contains("No such file or directory")) {
+                    NotificationsViewModel.append(result);
+                    Toast.makeText(context(), "Copy log file ERROR, couldn't open source file",
+                            Toast.LENGTH_LONG).show();
+                    try {
+                        fos.close();
+                        pfd.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    pfd = null;
+                    return;
+                }
+                if (fos == null) { // fOut == null indicates first pass and file needs to be opened
+                    fos = new FileOutputStream(pfd.getFileDescriptor());
+                }
+                // remove the cli prompt.
+                if (returnStatus == Sshcom.ReturnStatus.WAITFOR_FOUND) { // remove the cli prompt.
+                    int crIdx = result.lastIndexOf('\n');
+                    result = result.substring(0, crIdx + 1);
+                    NotificationsViewModel.append(result.substring(crIdx));
+                }
+                // write out the result buffer
+                final byte[] b = result.getBytes();
+                try {
+                    fos.write(b);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    Toast.makeText(context(), "Copy log file ERROR, couldn't write to destination file",
+                            Toast.LENGTH_LONG).show();
+                    try {
+                        fos.close();
+                        pfd.close();
+                    } catch (IOException ee) {
+                        ee.printStackTrace();
+                    }
+                    pfd = null;
+                    return;
+                }
+                // close the file
+                if (returnStatus == Sshcom.ReturnStatus.WAITFOR_FOUND) {
+                    try {
+                        fos.close();
+                        pfd.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    Toast.makeText(context(), "Copy log file complete",
+                            Toast.LENGTH_LONG).show();
+                }
             }
-            pfd = null;
-            return;
-        }
-        if (fos == null) { // fOut == null indicates first pass and file needs to be opened
-            fos = new FileOutputStream(pfd.getFileDescriptor());
-        }
-        // remove the cli prompt.
-        if (returnStatus == Sshcom.ReturnStatus.WAITFOR_FOUND) { // remove the cli prompt.
-            int crIdx = result.lastIndexOf('\n');
-            result = result.substring(0, crIdx + 1);
-            NotificationsViewModel.append(result.substring(crIdx));
-        }
-        // write out the result buffer
-        final byte[] b = result.getBytes();
-        try {
-            fos.write(b);
-         } catch (IOException e) {
-            e.printStackTrace();
-            Toast.makeText(context, "Copy log file ERROR, couldn't write to destination file",
-                    Toast.LENGTH_LONG).show();
-            try {
-                fos.close();
-                pfd.close();
-            } catch (IOException ee) {
-                ee.printStackTrace();
-            }
-            pfd = null;
-            return;
-        }
-        // close the file
-        if (returnStatus == Sshcom.ReturnStatus.WAITFOR_FOUND) {
-            try {
-                fos.close();
-                pfd.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Toast.makeText(context, "Copy log file complete",
-                    Toast.LENGTH_LONG).show();
-        }
 
     };
 }

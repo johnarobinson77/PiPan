@@ -39,7 +39,10 @@ public class NotificationsFragment extends Fragment {
         scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
         final TextView textView = root.findViewById(R.id.text_notifications);
         textView.setMovementMethod(new ScrollingMovementMethod());
-        notificationsViewModel.getText().observe(getViewLifecycleOwner(), s -> textView.append(s));
+        notificationsViewModel.getText().observe(getViewLifecycleOwner(), s -> {
+            textView.append(s);
+            scrollView.post(() -> scrollView.fullScroll(View.FOCUS_DOWN));
+        });
         return root;
     }
 }

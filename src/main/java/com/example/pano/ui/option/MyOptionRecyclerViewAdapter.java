@@ -66,10 +66,13 @@ public class MyOptionRecyclerViewAdapter extends RecyclerView.Adapter<MyOptionRe
                         PanCom.quitPan();
                         break;
                     case "c":
-                        PanCom.startChecklist(view);
+                        PanCom.startChecklist();
+                        break;
+                    case "5":
+                        PanCom .waitSequence("5");
                         break;
                     default:
-                        PanCom.runSequence(cmdChar);
+                        PanCom.runSequence(view, cmdChar);
                 }
             }
         });

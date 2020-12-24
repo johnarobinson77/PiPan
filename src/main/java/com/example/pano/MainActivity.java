@@ -17,11 +17,12 @@ package com.example.pano;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
+import android.os.PowerManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -32,17 +33,30 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.example.pano.Sshcom.SshcomForegroundService;
+import com.example.pano.Sshcom.Sshcom;
+import com.example.pano.ui.home.HomeFragment;
+import com.example.pano.ui.home.HomeViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.util.List;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
-public class MainActivity extends AppCompatActivity {
-    
-    @Override
+public class MainActivity extends AppCompatActivity  {
+
+    public MainActivity() {
+        Globals.reset();
+    }
+
+     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -57,11 +71,16 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
         NavigationUI.setupWithNavController(navView, navController);
-        Looper mainLooper = getMainLooper();
-        Handler sshHandler = new Handler(mainLooper);
-        Globals.sshcom = new Sshcom(this, sshHandler);
+        if (Globals.sshcom == null) {
+            Globals.sshcom = new Sshcom(this, new Handler(getMainLooper()));
+        }
+        Globals.context = this;
         registerNetworkCallback();
-    }
+        Intent intent = new Intent(this, SshcomForegroundService.class);
+        startService(intent);
+        Globals.powerManager = (PowerManager)
+                this.getSystemService(Context.POWER_SERVICE);
+     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -89,7 +108,8 @@ public class MainActivity extends AppCompatActivity {
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.settings_dialog_layout, null);
         TextView tv =  dialogView.findViewById(R.id.settings_dialog_title);
-        tv.setText("Host " + (select+1));
+        String title = getString(R.string.settings_dialog_title) + (select+1);
+        tv.setText(title);
 
         final EditText ipEditText = dialogView.findViewById(R.id.ip_address);
         final EditText unEditText = dialogView.findViewById(R.id.user_name);
@@ -133,8 +153,43 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (Globals.sshcom.getRunCommand() != null)
-            Globals.sshcom.getRunCommand().getLooper().quit();
+        Globals.reset();
+        unRegisterNetworkCallback();
+    }
+
+    @Override
+    public void onBackPressed() {
+        FragmentManager fm = getSupportFragmentManager();
+        Fragment frag = fm.getFragments().get(0);
+        FragmentManager cfm = frag.getChildFragmentManager();
+        List<Fragment> fl = cfm.getFragments();
+        boolean found = false;
+        for (Fragment f: fl) {
+            if (f != null && f.isVisible()) {
+                if (f instanceof HomeFragment) {
+                    found = true;
+                    if (!Globals.isConnected()) {
+                        Intent intent = new Intent(this, SshcomForegroundService.class);
+                        stopService(intent);
+                        super.onBackPressed();
+                        return;
+                    } else {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        builder.setMessage("Are you sure you want to quit?");
+                        //builder.setTitle("quitting");
+                        builder.setPositiveButton("OK", (dialog, which) -> {
+                            Intent intent = new Intent(this, SshcomForegroundService.class);
+                            stopService(intent);
+                            super.onBackPressed();
+                        });
+                        builder.setNegativeButton("NO", (dialog, which) -> {
+                        });
+                        builder.show();
+                    }
+                }
+            }
+        }
+        if (!found) super.onBackPressed();
     }
 
     // Network Check
@@ -161,5 +216,7 @@ public class MainActivity extends AppCompatActivity {
             Globals.isNetworkConnected = false;
         }
     }
+
+    public void unRegisterNetworkCallback(){}
 
 }

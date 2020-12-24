@@ -33,7 +33,7 @@ import android.widget.Toast;
 import com.example.pano.Globals;
 import com.example.pano.PanInterface.PanCom;
 import com.example.pano.R;
-import com.example.pano.Sshcom;
+import com.example.pano.Sshcom.Sshcom;
 import com.example.pano.ui.notifications.NotificationsViewModel;
 
 import java.io.IOException;
@@ -63,6 +63,7 @@ public class HomeFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         final TextView textView = root.findViewById(R.id.text_home);
         homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
+        Globals.homeFragment = this;
 
         //set up all the buttons
         testButton = root.findViewById(R.id.test_button);
@@ -93,10 +94,22 @@ public class HomeFragment extends Fragment {
         hostSelectButton.setOnCheckedChangeListener((group, checkedId) -> manageHostRadioButtons(checkedId));
 
         updateButtons();
+        if ( Globals.powerManager.isPowerSaveMode()) {
+            HomeViewModel.updateBanner("Battery Saver is on");
+        }
+        else {
+            HomeViewModel.updateBanner("Battery Saver is off");
+        }
         return root;
     }
 
-    private void updateButtons() {
+    @Override
+    protected void finalize() throws Throwable {
+        Globals.homeFragment = null;
+        super.finalize();
+    }
+
+    public void updateButtons() {
         int hostSelect = Globals.getHostSelect();
         if (hostSelect < 0){
             testButton.setEnabled(false);
@@ -112,9 +125,9 @@ public class HomeFragment extends Fragment {
             connectButton.setEnabled(!Globals.isConnected() && Globals.isNotConnecting());
             disconnectButton.setEnabled(Globals.isConnected());
             ctrlCButton.setEnabled(Globals.isConnected());
-            startPanButton.setEnabled(Globals.isConnected());
-            copyLogButton.setEnabled(Globals.isConnected());
-            shutdownButton.setEnabled(Globals.isConnected());
+            startPanButton.setEnabled(Globals.isConnected() && !Globals.isPanRunning());
+            copyLogButton.setEnabled(Globals.isConnected() && !Globals.isPanRunning());
+            shutdownButton.setEnabled(Globals.isConnected() && !Globals.isPanRunning());
             if (Globals.getHostSelect() == 0) hostSelectButton.check(R.id.radio_host1);
             else if (Globals.getHostSelect() == 1) hostSelectButton.check(R.id.radio_host2);
         }
@@ -123,11 +136,11 @@ public class HomeFragment extends Fragment {
     public void connectAndStart() {
         patchIP();
         // start the ssh thread
-        Globals.sshcom.startRunCommandThread(Globals.getHostSelect());
+        Globals.sshcom.setCurrentHost(Globals.getHostSelect());
         Globals.setStatusConnecting();
         updateButtons();
         // start the login using onComplete at step 0
-        callback.onComplete(0, Sshcom.ReturnStatus.NULL, null);
+        sysCallback.onComplete(0, Sshcom.ReturnStatus.NULL, null);
     }
 
     private void patchIP() {
@@ -150,11 +163,11 @@ public class HomeFragment extends Fragment {
 
     public void disconnect() {
         // start the disconnect at step 3
-        callback.onComplete(3, Sshcom.ReturnStatus.NULL, "");
+        sysCallback.onComplete(3, Sshcom.ReturnStatus.NULL, "");
     }
     public void shutdown() {
         // start the shutdown at step 5
-        callback.onComplete(5, Sshcom.ReturnStatus.NULL, "");
+        sysCallback.onComplete(5, Sshcom.ReturnStatus.NULL, "");
     }
 
     private static final int CREATE_FILE = 1;
@@ -234,7 +247,7 @@ public class HomeFragment extends Fragment {
         // kill waiting for current responce
         Sshcom.endWaitForResponse();
         //then send a return and wait for the cli prompt
-        callback.onComplete(7, Sshcom.ReturnStatus.NULL, null);
+        sysCallback.onComplete(7, Sshcom.ReturnStatus.NULL, null);
     }
 
     private void manageHostRadioButtons(int checkedId) {
@@ -256,7 +269,8 @@ public class HomeFragment extends Fragment {
             Toast.makeText(this.getActivity(), "Document successfully created", Toast.LENGTH_SHORT).show();
             try {
                 //Uri documentUri = data.getData();
-                ParcelFileDescriptor pfd = requireActivity().getContentResolver().openFileDescriptor(data.getData(), "w");
+                ParcelFileDescriptor pfd = requireActivity().getContentResolver().
+                        openFileDescriptor(data.getData(), "w");
                 PanCom.copyLog(getActivity(), pfd);
              } catch (Exception e) {
                 e.printStackTrace();
@@ -267,56 +281,54 @@ public class HomeFragment extends Fragment {
 
     // This callback handles the returns from host commands sent to Sshcom for several of the
     // buttons.  Includes connect (tag 0) disconnect (tag 3) and shutdown (tag 5)
-    final Sshcom.CommandResultCallback callback = new Sshcom.CommandResultCallback() {
+    private final Sshcom.CommandResultCallback sysCallback = new Sshcom.CommandResultCallback() {
         @Override
         public void onComplete(int tag, Sshcom.ReturnStatus returnStatus, String result) {
             if (result != null) NotificationsViewModel.append(result);
             if (returnStatus == Sshcom.ReturnStatus.STILL_RUNNING ||
-                    returnStatus == Sshcom.ReturnStatus.ERROR ||
                     returnStatus == Sshcom.ReturnStatus.CHANNEL_OPENED)
                 return;
-            String cmdBuf = Sshcom.getCmdOutputBuffer();
+
+            if (returnStatus == Sshcom.ReturnStatus.ERROR) {
+                Globals.setStatusDisconnected();
+                updateButtons();
+                return;
+            }
             switch (tag) {
                 case 0:
                     Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.OPEN_CHANNEL, tag + 1,
-                            "", Globals.sshcom.getCliPrompt(Globals.getHostSelect()), 5, callback);
+                            "", Globals.sshcom.getCliPrompt(Globals.getHostSelect()), 5, sysCallback);
                     break;
                 case 1:
                     Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.RUN_COMMAND, tag + 1,
                             "cd " + Globals.sshcom.getDirectory(Globals.getHostSelect()),
-                            Globals.sshcom.getCliPrompt(Globals.getHostSelect()), 5, callback);
+                            Globals.sshcom.getCliPrompt(Globals.getHostSelect()), 5, sysCallback);
                     break;
                 case 2:
-                    if (cmdBuf != null) {
-                        if (!cmdBuf.contains("SSH Error")) {
-                            Globals.setStatusConnected();
-                        } else {
-                            Globals.setStatusDisconnected();
-                        }
-                    } else {
-                        Globals.setStatusDisconnected();
-                    }
+                    Globals.setStatusConnected();
                     updateButtons();
                     break;
                 case 3:
                     Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.RUN_COMMAND, 4,
-                            "exit", null, 5, callback);
+                            "exit", null, 5, sysCallback);
                     break;
                 case 4:
                     Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.CLOSE_CHANNEL, 6,
-                            null, null, null, callback);
+                            null, null, null, sysCallback);
                     break;
                 case 5:
                     Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.RUN_COMMAND, 4,
-                            "sudo shutdown now", null, null, callback);
+                            "sudo shutdown now", null, null, sysCallback);
                     break;
                 case 6:
                     Globals.setStatusDisconnected();
                     updateButtons();
                     break;
                 case 7:
-                    Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.OPEN_CHANNEL, 8,
-                            "", Globals.sshcom.getCliPrompt(Globals.getHostSelect()), 5, callback);
+                    Globals.sshcom.sendRunCommandMsg(Sshcom.RunCommandType.RUN_COMMAND, 8,
+                            "", Globals.sshcom.getCliPrompt(Globals.getHostSelect()), 5, sysCallback);
+                    Globals.setStatusPanNotRunning();
+                    updateButtons();
                     break;
                 case 8:
                     break;

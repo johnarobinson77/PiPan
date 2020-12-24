@@ -15,36 +15,55 @@
  */
 package com.example.pano;
 
+import android.content.Context;
 import android.net.ConnectivityManager;
+import android.os.PowerManager;
+
+import com.example.pano.Sshcom.Sshcom;
+import com.example.pano.ui.home.HomeFragment;
 
 public class Globals {
-    public static Sshcom sshcom = null;
     public static boolean isNetworkConnected;
+    public static Context context = null;
+    public static Sshcom sshcom;
+    public static HomeFragment homeFragment;
+    public static PowerManager powerManager;
 
     private static int connectedStatus = 0;
     public static void setStatusConnected(){
-        Globals.connectedStatus = 2;
+        connectedStatus = 2;
     }
     public static void setStatusConnecting(){
-        Globals.connectedStatus = 1;
+        connectedStatus = 1;
     }
     public static void setStatusDisconnected(){
-        Globals.connectedStatus = 0;
+        connectedStatus = 0;
     }
     public static boolean isConnected(){
         return connectedStatus == 2;
     }
     public static boolean isNotConnecting(){ return connectedStatus != 1; }
 
-    private static int runStatus = 0;
-    public static void setStatusRunning(){
-        Globals.runStatus = 2;
+    private static int panRunStatus = 0;
+    public static void setStatusPanRunning(){
+        panRunStatus = 2;
     }
-    public static void setStatusNotRunning(){
-        Globals.runStatus = 0;
+    public static void setStatusPanNotRunning(){
+        panRunStatus = 0;
     }
-    public static boolean isRunning(){
-        return runStatus == 2;
+    public static boolean isPanRunning(){
+        return panRunStatus == 2;
+    }
+
+    private static int seqRunStatus = 0;
+    public static void setStatusSeqRunning(){
+        seqRunStatus = 2;
+    }
+    public static void setStatusSeqNotRunning(){
+        seqRunStatus = 0;
+    }
+    public static boolean isSeqRunning(){
+        return seqRunStatus == 2;
     }
 
     public static ConnectivityManager cm = null;
@@ -57,5 +76,15 @@ public class Globals {
         Globals.hostSelect = hostSelect;
     }
 
-
+    public static void reset() {
+        sshcom = null;
+        context = null;
+        homeFragment = null;
+        powerManager = null;
+        connectedStatus = 0;
+        panRunStatus = 0;
+        seqRunStatus = 0;
+        cm = null;
+        hostSelect = -1;
+    }
 }

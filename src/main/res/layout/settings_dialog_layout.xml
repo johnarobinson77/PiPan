@@ -25,13 +25,13 @@
             android:layout_marginLeft="4dp"
             android:layout_marginRight="4dp"
             android:layout_marginBottom="4dp"
-            android:text="@string/unit_ip_addr" />
+            android:text="@string/settings_ip_addr" />
         <EditText
             android:id="@+id/ip_address"
             android:inputType="text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/unit_ip_addr" />
+            android:hint="@string/settings_ip_addr" />
 
         <TextView
             android:layout_width="match_parent"
@@ -40,13 +40,13 @@
             android:layout_marginLeft="4dp"
             android:layout_marginRight="4dp"
             android:layout_marginBottom="4dp"
-            android:text="@string/unit_user_name" />
+            android:text="@string/settings_user_name" />
         <EditText
             android:id="@+id/user_name"
             android:inputType="text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/unit_user_name" />
+            android:hint="@string/settings_user_name" />
 
         <TextView
             android:layout_width="match_parent"
@@ -55,14 +55,14 @@
             android:layout_marginLeft="4dp"
             android:layout_marginRight="4dp"
             android:layout_marginBottom="4dp"
-            android:text="@string/unit_password" />
+            android:text="@string/settings_password" />
         <EditText
             android:id="@+id/password"
             android:inputType="textPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:fontFamily="sans-serif"
-            android:hint="@string/unit_password"/>
+            android:hint="@string/settings_password"/>
 
         <TextView
             android:layout_width="match_parent"
@@ -71,13 +71,13 @@
             android:layout_marginLeft="4dp"
             android:layout_marginRight="4dp"
             android:layout_marginBottom="4dp"
-            android:text="@string/unit_working_dir" />
+            android:text="@string/settings_working_dir" />
         <EditText
             android:id="@+id/working_dir"
             android:inputType="text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/unit_working_dir" />
+            android:hint="@string/settings_working_dir" />
 
         <TextView
             android:layout_width="match_parent"
@@ -86,13 +86,13 @@
             android:layout_marginLeft="4dp"
             android:layout_marginRight="4dp"
             android:layout_marginBottom="4dp"
-            android:text="@string/command_line_prompt" />
+            android:text="@string/settings_command_line_prompt" />
         <EditText
             android:id="@+id/program_name"
             android:inputType="text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/command_line_prompt" />
+            android:hint="@string/settings_command_line_prompt" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -103,14 +103,14 @@
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="0.50"
-                android:text="Cancel" />
+                android:text="@string/settings_cancel" />
 
             <Button
                 android:id="@+id/dialog_save"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="0.50"
-                android:text="Save" />
+                android:text="@string/settings_save" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

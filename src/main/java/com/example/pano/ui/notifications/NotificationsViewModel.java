@@ -23,7 +23,7 @@ public class NotificationsViewModel extends ViewModel {
 
     private static final MutableLiveData<String> mText = new MutableLiveData<>();
 
-    private static String savedLog = new String();
+    private static String savedLog = "";
     private static Integer lineCnt = 0;
 
     public NotificationsViewModel() {
