@@ -17,14 +17,14 @@ Sshcom requires class SshcomForegroundService in the project. Other than when st
 The AndroidManifest file for your app will require these permissions:
 ```xml
 <uses-permission android:name="android.permission.INTERNET">
-<uses-permission android:name="android.permission.FOREGROUND\_SERVICE">
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE">
 ```
 And the declaration of this service
 ```xml
 <service
-  android:name=".Sshcom.SshcomForegroundService";
+  android:name=".Sshcom.SshcomForegroundService"
   android:enabled="true"
-  android:exported="false"
+  android:exported="false">
 ```
 ## Main Interfaces to Sshcom
 
@@ -32,11 +32,11 @@ These are the main interfaces to the Sshcom class.
 
 ### Login Information
 
-The following constructor:
+The following constructor for Sshcom should be used to instantiate Sshcom:
 ```java
-public Sshcom(Activity activity, Handler sshHandler)
+Sshcom sshcom = new Sshcom(myActivity, new Handler(myActivity.getMainLooper()));
 ```
-restores the logon information that was previously stored if it exists. The constructor requires the Activity should be the main activity of the app. The Handler is discussed later in this document.
+The constructor requires the Activity to be the main activity of the app.  It also restores the logon information that was previously stored if it exists. 
 
 Sshcom internally stores the following login info for several hosts:
 ```java
@@ -48,13 +48,13 @@ private String[] cliPrompt;
 ```
 There are the expected public setters and getters for each of those fields, and it requires the select to indicate which host login info to update. The following method will save all of the above strings in the saved preferences area of the app.
 ```java
-public void saveSettings(int select)
+public void saveSettings(int hostSelect)
 ```
 They will be read back in by the constructor next time the app starts.
 
 In addition, Sshcom stores the following login info:
 ```java
-private String IP;
+private String[] IP;
 ```
 IP is the string that Sshcom actually uses for the host, and Sshcom sets it to the same value as baseIP whenever baseIP is set. However, sometimes it is necessary to patch the host IP address based on the current settings. If necessary it should be updated before a connect command is issued.
 
@@ -65,25 +65,30 @@ startService(intent);
 ```
 which starts a foreground service in which the SSH communications across the network are done. By putting it in a foreground service, long-running jobs on the server proceed even when the app or the device goes idle or asleep. As required by Android, this pops up a system notification. Edit SshcomForegroundService to modify that Notification.
 
+Finally, select the host from the array of host login information by using this meathod:
+```java
+sshcom.setCurrentHost(hostSelect);
+```
+
 ### Sending Commands to Sshcom
 
 The interface from the UI to the async thread handing SSH communications is
 ```java
 public void sendRunCommandMsg(
-int type, // type of command,
-int tag, // command tag
-String command, // text string sent to the server
-String waitFor, // A text string that indicates the end of return
-Integer timeOut, // Number of seconds to wait for text.
-CommandResultCallback callback //Pointer to a class containing a
-//method to handle return text
+  int type, // type of command,
+  int tag, // command tag
+  String command, // text string sent to the server
+  String waitFor, // A text string that indicates the end of return
+  Integer timeOut, // Number of seconds to wait for text.
+  CommandResultCallback callback //Pointer to a class containing a
+                                 //method to handle return text
 )
 ```
 - type in the above parameter list can be any of the following:
 ```java
 Sshcom.RunCommandType.OPEN_CHANNEL = 0; // Open the channel
 Sshcom.RunCommandType.RUN_COMMAND = 1; // Send a command and wait for response
-Sshcom.RunCommandType._CLOSE_CHANNEL = 2; // close the channel
+Sshcom.RunCommandType.CLOSE_CHANNEL = 2; // close the channel
 ```
 - tag is an int that gets passed to the callback function handling the server&#39;s response.
 - command is the String containing the command to be sent. Sshcom adds a \&lt;return\&gt; at the end of the string.
@@ -102,10 +107,10 @@ Finally, the channel can be closed using the CHANNEL\_CLOSE type. Even if you se
 A callback must be defined to receive the text from the server after sending a command. This is done by overriding the onComplete method in the interface shown below:
 ```java
 public interface CommandResultCallback {
-public void onComplete(int tag, // user-specific
-ReturnStatus returnStatus, // return status
-String result // result
-);
+  public void onComplete(int tag, // user-specific
+    ReturnStatus returnStatus, // return status
+    String result // result
+  );
 }
 ```
 - tag is an int that is passed from the command issued and is available to the app for any use, such as disambiguating which sendRunCommand caused this particular return.
