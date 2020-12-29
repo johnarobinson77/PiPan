@@ -146,7 +146,7 @@ public class PanCom {
                     }
                     if (listViewAdapter != null) listViewAdapter.updateList();
                     Globals.setStatusPanRunning();
-                    Globals.homeFragment.updateButtons();
+                    if (Globals.homeFragment != null) Globals.homeFragment.updateButtons();
 
                     break;
 
@@ -165,7 +165,7 @@ public class PanCom {
                         ITEMS.clear();
                         if (listViewAdapter != null) listViewAdapter.updateList();
                         Globals.setStatusPanNotRunning();
-                        Globals.homeFragment.updateButtons();
+                        if (Globals.homeFragment != null) Globals.homeFragment.updateButtons();
                     }
                     break;
                 default:
