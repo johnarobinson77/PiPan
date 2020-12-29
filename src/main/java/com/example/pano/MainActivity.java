@@ -73,11 +73,11 @@ public class MainActivity extends AppCompatActivity  {
         NavigationUI.setupWithNavController(navView, navController);
         if (Globals.sshcom == null) {
             Globals.sshcom = new Sshcom(this, new Handler(getMainLooper()));
+            Intent intent = new Intent(this, SshcomForegroundService.class);
+            startService(intent);
         }
         Globals.context = this;
         registerNetworkCallback();
-        Intent intent = new Intent(this, SshcomForegroundService.class);
-        startService(intent);
         Globals.powerManager = (PowerManager)
                 this.getSystemService(Context.POWER_SERVICE);
      }
@@ -153,8 +153,6 @@ public class MainActivity extends AppCompatActivity  {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Globals.reset();
-        unRegisterNetworkCallback();
     }
 
     @Override
@@ -171,6 +169,8 @@ public class MainActivity extends AppCompatActivity  {
                     if (!Globals.isConnected()) {
                         Intent intent = new Intent(this, SshcomForegroundService.class);
                         stopService(intent);
+                        Globals.reset();
+                        unRegisterNetworkCallback();
                         super.onBackPressed();
                         return;
                     } else {
@@ -180,6 +180,8 @@ public class MainActivity extends AppCompatActivity  {
                         builder.setPositiveButton("OK", (dialog, which) -> {
                             Intent intent = new Intent(this, SshcomForegroundService.class);
                             stopService(intent);
+                            Globals.reset();
+                            unRegisterNetworkCallback();
                             super.onBackPressed();
                         });
                         builder.setNegativeButton("NO", (dialog, which) -> {
