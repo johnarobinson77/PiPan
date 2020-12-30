@@ -23,11 +23,11 @@ import com.example.pano.Sshcom.Sshcom;
 import com.example.pano.ui.home.HomeFragment;
 
 public class Globals {
-    public static boolean isNetworkConnected;
+    public static boolean isNetworkConnected = false;
     public static Context context = null;
-    public static Sshcom sshcom;
-    public static HomeFragment homeFragment;
-    public static PowerManager powerManager;
+    public static Sshcom sshcom = null;
+    public static HomeFragment homeFragment = null;
+    public static PowerManager powerManager = null;
 
     private static int connectedStatus = 0;
     public static void setStatusConnected(){
