@@ -63,7 +63,7 @@ public class Sshcom {
     //thread for handling the ssh interface
     private HandlerThread runCommand = null;
     // handler for passing runCommand messages.
-    private Handler runCommandHandler;
+    private static Handler runCommandHandler;
 
     private String errorMessage = null;
 
